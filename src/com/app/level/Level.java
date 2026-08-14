@@ -14,6 +14,7 @@ import com.app.cell.Coordinates;
 import com.app.entity.*;
 import com.app.entity.enemy.Enemy;
 import com.app.level.wincondition.ItemCondition;
+import com.app.level.wincondition.WinCondition;
 import com.app.usable.Usable;
 
 /**
@@ -50,8 +51,14 @@ public class Level {
      */
     private int numberOfCoins;
 
+    /**
+     * The number of turns the enemies will be frozen
+     */
     private int blockEnemies;
 
+    /**
+     * The win condition of the level
+     */
     private WinCondition winCondition;
 
     /**
@@ -67,6 +74,8 @@ public class Level {
      * @param enemies The enemies located on the level
      * @param occupiedCells The cells that are occupied by at least one enemy on the level
      * @param numberOfCoins The number of coins that the level has
+     * @param blockEnemies The number of turns the enemies will be frozen
+     * @param winCondition The win condition of the level
      */
     Level(Cell[][] grid, Player player, List<Enemy> enemies, Set<Cell> occupiedCells, int numberOfCoins, int blockEnemies, WinCondition winCondition){
         this.grid = grid;
@@ -92,7 +101,7 @@ public class Level {
      * @param player The player that will play the level
      * @throws IOException if the file doesn't exist or the file's content can't be accessed
      */
-    public Level(String fileName, Player player) throws IOException{
+    public Level(String fileName, Player player) throws IOException {
         this(LevelLoader.load(fileName,player));
     }
 
@@ -136,6 +145,10 @@ public class Level {
         return this.grid[0].length;
     }
 
+    /**
+     * Adds number of turns where the enemies will be frozen
+     * @param numberOfMovements The number of turns the enemies will frozen
+     */
     public void blockEnemies(int numberOfMovements){
         if(numberOfMovements < 0){
             throw new IllegalArgumentException("The enemies can't be blocked for a negative number of movements !");
@@ -153,6 +166,10 @@ public class Level {
         }
     }
 
+    /**
+     * Modifies the player's score
+     * @param score The score that will be added or removed from the player's score
+     */
     public void modifyPlayerScore(int score){
         this.player.modifyScore(score);
     }
@@ -334,6 +351,7 @@ public class Level {
 
     /**
      * This function launches an action according to the cell where the player is located
+     * @return the damaged enemies (if there are any)
      */
     public List<String> effect(){
         int playerLine = this.player.getCurrentLine();
@@ -385,6 +403,11 @@ public class Level {
 
     }
 
+    /**
+     * Adds a usable to the player's inventory
+     * @param usable The usable that will be added to the player's inventory
+     * @return true if the addition succeded, or false otherwise
+     */
     public boolean addUsableToPlayer(Usable usable){
         return this.player.addUsable(usable);
     }
@@ -397,8 +420,216 @@ public class Level {
         return this.player.getNumberOfHearts() <= 0;
     }
 
+    /**
+     * Checks if the win condition was achieved
+     * @return true if the win condition was achieved, or false otherwise
+     */
     public boolean win(){
         return this.winCondition.win(this);
+    }
+
+    /**
+     * Checks if a level's cell is empty
+     * @param line The cell's line in the level
+     * @param column The cell's column in the level
+     * @return true if the cell is empty, or false otherwise
+     */
+    public boolean isEmptyCell(int line, int column){
+        if(line < 0 || line >= this.getHeight() || column < 0 || column >= this.getWidth()){
+            throw new ArrayIndexOutOfBoundsException("You can't check if a cell out of the grid bounds is empty !");
+        }
+
+        return this.grid[line][column].getType() == CellType.EMPTY && !this.grid[line][column].containsBox();
+    }
+
+    /**
+     * Uses a usable from the player's inventory
+     * @param inventoryIndex The index of the usable in the player's inventory
+     * @return A list of the enemies that were damaged by the player while using the item or skill (in case there are any)
+     */
+    public List<String> use(int inventoryIndex){
+        return this.player.use(inventoryIndex,this);
+    }
+
+    /**
+     * Moves the player to some specific coordinates
+     * @param line The new coordinates line
+     * @param column The new coordinates column
+     */
+    public void movePlayer(int line, int column){
+        this.player.setCoordinates(line,column);
+    }
+
+    /**
+     * Checks if there is any collision between the player and any of the enemies
+     * @return true if there is a collision between the player and an enemy, or false otherwise
+     */
+    public boolean playerEnemyCollision(){
+        Cell playerCell = this.grid[this.player.getCurrentLine()][this.player.getCurrentColumn()];
+        return this.occupiedCells.contains(playerCell);
+    }
+
+    /**
+     * Enables the lockpicking skill of the player
+     */
+    public void playerCanLockpick(){
+        this.player.canLockpick();
+    }
+
+    /**
+     * Returns the number of enemies in the level
+     * @return the number of enemies in the level
+     */
+    public int getNumberOfEnemies(){
+        return this.enemies.size();
+    }
+
+    /**
+     * Modifies the player's number of hearts
+     * @param hearts The number of hearts that will be added or removed from the player's number of hearts
+     */
+    public void modifyPlayerHearts(int hearts){
+        this.player.modifyNumberOfHearts(hearts);
+    }
+
+    /**
+     * Swaps the position of the player with a random enemy
+     */
+    public void swapWithRandomEnemy(){
+        List<Enemy> enemies = new ArrayList<>();
+
+        int line = this.player.getCurrentLine();
+        int column = this.player.getCurrentColumn();
+
+        for(Enemy enemy : this.enemies){
+            if(enemy.validMovement(this.grid[line][column]) && this.player.validMovement(this.grid[enemy.getCurrentLine()][enemy.getCurrentColumn()])){
+                enemies.add(enemy);
+            }
+        }
+
+        if(enemies.isEmpty()){
+            return ;
+        }
+
+        int randomIndex = ThreadLocalRandom.current().nextInt(0,enemies.size());
+
+        Enemy randomEnemy = enemies.get(randomIndex);
+
+        int randomEnemyLine = randomEnemy.getCurrentLine();
+        int randomEnemyColumn = randomEnemy.getCurrentColumn();
+
+        boolean isOccupied = false;
+
+        for(Enemy enemy : this.enemies){
+            if(enemy != randomEnemy && enemy.equals(randomEnemy)){
+                isOccupied = true;
+                break;
+            }
+        }
+
+        if(!isOccupied){
+            this.occupiedCells.remove(this.grid[randomEnemyLine][randomEnemyColumn]);
+        }
+
+        this.player.setCoordinates(randomEnemyLine,randomEnemyColumn);
+        randomEnemy.setCoordinates(line,column);
+
+        this.occupiedCells.add(this.grid[line][column]);
+    }
+
+    /**
+     * Ends the game if the level stands on the item win condition
+     */
+    public void endItemWinCondition(){
+        if(this.winCondition instanceof ItemCondition){
+            ((ItemCondition) this.winCondition).end();
+        }
+    }
+
+    /**
+     * Damages enemies that are located on some specific coordinates
+     * @param coordinates The targeted coordinates
+     * @param damage The amount of damage that the enemies will receive
+     * @return the enemies that were damaged
+     */
+    public List<String> damageEnemiesOnCoordinates(Coordinates coordinates, int damage){
+
+        List<String> damagedEnemies = new ArrayList<>();
+
+        if(coordinates == null){
+            throw new IllegalArgumentException("Coordinates are null !");
+        }
+
+        int line = coordinates.getLine();
+        int column = coordinates.getColumn();
+
+        Cell cell = this.grid[line][column];
+
+        if(!this.occupiedCells.contains(cell)){
+            return damagedEnemies;
+        }
+        
+        this.occupiedCells.clear();
+        //Withdraw all the previous occupied cells
+
+        Iterator<Enemy> iterator = this.enemies.iterator();
+
+        while(iterator.hasNext()){
+            Enemy enemy = iterator.next();
+
+            if(enemy.getCurrentLine() == line && enemy.getCurrentColumn() == column){
+                enemy.modifyNumberOfHearts(damage);
+
+                damagedEnemies.add(enemy.toString());
+
+                if(enemy.getNumberOfHearts() <= 0){
+                    iterator.remove();
+                    this.player.incrementNumberOfKills();
+                    continue;
+                }
+
+                enemy.setCoordinates(enemy.getSpawnLine(),enemy.getSpawnColumn());
+            }
+
+            this.occupiedCells.add(this.getEntityCell(enemy));
+        }
+
+        return damagedEnemies;
+    }
+
+    /**
+     * Increments by 1 the number of used swords by the player
+     */
+    public void incrementPlayerNumberOfUsedSwords(){
+        this.player.incrementNumberOfUsedSwords();
+    }
+
+    /**
+     * Returns the cell symbol in the level
+     * @param line The cell's line in the level
+     * @param column The cell's column in the level
+     */
+    private String getCellSymbolInLevel(int line, int column){
+        if(line == this.player.getCurrentLine() && column == this.player.getCurrentColumn()){
+            //If this code is reached it means that this position is the player's one
+            return this.player.getSymbol();
+            
+        } else if(line == this.player.getSpawnLine() && column == this.player.getSpawnColumn()) {
+            return "🌀";
+
+        } else if(this.occupiedCells.contains(this.grid[line][column])) {
+
+            for(Enemy enemy : this.enemies){
+                if(enemy.getCurrentLine() == line && enemy.getCurrentColumn() == column){
+                    return enemy.getSymbol();
+                }
+            }
+
+            throw new IllegalStateException("There is a matching problem between the positions of the enemies and the occupiedCells");
+
+        } else {
+            return this.grid[line][column].getCellSymbol();
+        }
     }
 
      /**
@@ -411,31 +642,13 @@ public class Level {
 
         for(int i = 0; i < this.grid.length; i++){
             for(int j = 0; j < this.grid[i].length; j++){
-                if(i == this.player.getCurrentLine() && j == this.player.getCurrentColumn()){
-                    //If this code is reached it means that this position is the player's one
-                    string.append(this.player.getSymbol());
-                    
-                } else if(i == this.player.getSpawnLine() && j == this.player.getSpawnColumn()) {
-                    string.append("🌀");
-
-                } else if(this.occupiedCells.contains(this.grid[i][j])) {
-
-                    for(Enemy enemy : this.enemies){
-                        if(enemy.getCurrentLine() == i && enemy.getCurrentColumn() == j){
-                            string.append(enemy.getSymbol());
-                            break;
-                        }
-                    }
-
-                } else {
-                    string.append(this.grid[i][j].getCellSymbol());
-                }
-                
+                String cellSymbol = this.getCellSymbolInLevel(i, j);
+                string.append(cellSymbol);
             }
             string.append("\n");
         }
 
-        string.append("\n" + this.winCondition.label() + "\n");
+        string.append("\n" + this.winCondition.description() + "\n");
 
         if(this.blockEnemies > 0){
             String s = this.blockEnemies > 1 ? "s" : "";
@@ -489,136 +702,5 @@ public class Level {
     @Override
     public int hashCode(){
         return Arrays.deepHashCode(this.grid);
-    }
-
-    public boolean isEmptyCell(int line, int column){
-        if(line < 0 || line >= this.getHeight() || column < 0 || column >= this.getWidth()){
-            throw new ArrayIndexOutOfBoundsException("You can't check if a cell out of the grid bounds is empty !");
-        }
-
-        return this.grid[line][column].getType() == CellType.EMPTY && !this.grid[line][column].containsBox();
-    }
-
-
-    public List<String> use(int inventoryIndex){
-        return this.player.use(inventoryIndex,this);
-    }
-
-    public void movePlayer(int line, int column){
-        this.player.setCoordinates(line,column);
-    }
-
-    public boolean playerEnemyCollision(){
-        Cell playerCell = this.grid[this.player.getCurrentLine()][this.player.getCurrentColumn()];
-        return this.occupiedCells.contains(playerCell);
-    }
-
-    public void playerCanLockpick(){
-        this.player.canLockpick();
-    }
-
-    public int getNumberOfEnemies(){
-        return this.enemies.size();
-    }
-
-    public void modifyPlayerHearts(int hearts){
-        this.player.modifyNumberOfHearts(hearts);
-    }
-
-    public void swapWithRandomEnemy(){
-        List<Enemy> enemies = new ArrayList<>();
-
-        int line = this.player.getCurrentLine();
-        int column = this.player.getCurrentColumn();
-
-        for(Enemy enemy : this.enemies){
-            if(enemy.validMovement(this.grid[line][column]) && this.player.validMovement(this.grid[enemy.getCurrentLine()][enemy.getCurrentColumn()])){
-                enemies.add(enemy);
-            }
-        }
-
-        if(enemies.isEmpty()){
-            return ;
-        }
-
-        int randomIndex = ThreadLocalRandom.current().nextInt(0,enemies.size());
-
-        Enemy randomEnemy = enemies.get(randomIndex);
-
-        int randomEnemyLine = randomEnemy.getCurrentLine();
-        int randomEnemyColumn = randomEnemy.getCurrentColumn();
-
-        boolean isOccupied = false;
-
-        for(Enemy enemy : this.enemies){
-            if(enemy != randomEnemy && enemy.equals(randomEnemy)){
-                isOccupied = true;
-                break;
-            }
-        }
-
-        if(!isOccupied){
-            this.occupiedCells.remove(this.grid[randomEnemyLine][randomEnemyLine]);
-        }
-
-        this.player.setCoordinates(randomEnemyLine,randomEnemyColumn);
-        randomEnemy.setCoordinates(line,column);
-
-        this.occupiedCells.add(this.grid[line][column]);
-    }
-
-    public void endItemWinCondition(){
-        if(this.winCondition instanceof ItemCondition){
-            ((ItemCondition) this.winCondition).end();
-        }
-    }
-
-    public List<String> damageEnemiesOnCoordinates(Coordinates coordinates, int damage){
-
-        List<String> damagedEnemies = new ArrayList<>();
-
-        if(coordinates == null){
-            throw new IllegalArgumentException("Coordinates are null !");
-        }
-
-        int line = coordinates.getLine();
-        int column = coordinates.getColumn();
-
-        Cell cell = this.grid[line][column];
-
-        if(!this.occupiedCells.contains(cell)){
-            return damagedEnemies;
-        }
-        
-        this.occupiedCells.clear();
-        //Withdraw all the previous occupied cells
-
-        Iterator<Enemy> iterator = this.enemies.iterator();
-
-        while(iterator.hasNext()){
-            Enemy enemy = iterator.next();
-
-            if(enemy.getCurrentLine() == line && enemy.getCurrentColumn() == column){
-                enemy.modifyNumberOfHearts(damage);
-
-                damagedEnemies.add(enemy.toString());
-
-                if(enemy.getNumberOfHearts() <= 0){
-                    iterator.remove();
-                    this.player.incrementNumberOfKills();
-                    continue;
-                }
-
-                enemy.setCoordinates(enemy.getSpawnLine(),enemy.getSpawnColumn());
-            }
-
-            this.occupiedCells.add(this.getEntityCell(enemy));
-        }
-
-        return damagedEnemies;
-    }
-
-    public void incrementPlayerNumberOfUsedSwords(){
-        this.player.incrementNumberOfUsedSwords();
     }
 }

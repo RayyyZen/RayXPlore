@@ -8,14 +8,30 @@ import com.app.cell.Coordinates;
 import com.app.entity.Player;
 import com.app.level.Level;
 
+/**
+ * The teleportation skill class
+ * @version 5.0 (Fifth world)
+ * @since 5.0 (Fifth world)
+ * @author Rayane
+ */
 public class Teleportation extends Skill {
 
+    /**
+     * The name of the teleportation skill
+     */
     private static final String NAME = "Teleportation";
 
+    /**
+     * The teleportation skill constructor
+     */
     public Teleportation(){
         super(NAME);
     }
 
+    /**
+     * Initiates the action of the player using the teleportation skill
+     * @param level The level where the player is located
+     */
     public void use(Level level){
         int height = level.getHeight();
         int width = level.getWidth();
@@ -41,7 +57,13 @@ public class Teleportation extends Skill {
         level.movePlayer(randomCoordinates.getLine(),randomCoordinates.getColumn());
     }
 
+    /**
+     * Checks if the condition to unlock the teleportation skill is checked
+     * @param player The player of the level
+     * @return true if the condition to unlock the teleportation skill is checked, or false otherwise
+     */
     public boolean conditionToUnlock(Player player){
         return player.getNumberOfKills() >= 3;
     }
+
 }

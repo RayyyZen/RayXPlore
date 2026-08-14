@@ -16,6 +16,11 @@ import com.app.level.Level;
 public class View {
 
     /**
+     * The view constructor
+     */
+    public View(){}
+
+    /**
      * Displays an error message and exits the program
      * @param message The message that will be displayed according to the error that had occured
      * @param exitNumber An exit number that characterizes the specific error

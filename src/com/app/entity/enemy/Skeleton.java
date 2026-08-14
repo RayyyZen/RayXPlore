@@ -58,7 +58,7 @@ public class Skeleton extends Enemy {
         int gapLine = playerLine - skeletonLine;
         int gapColumn = playerColumn - skeletonColumn;
 
-        if(Math.abs(gapLine) + Math.abs(gapColumn) <= 1){
+        if(Math.abs(gapLine) + Math.abs(gapColumn) > 1){
             return Direction.NONE;
         }
         // Checks if the skeleton and the player are one cell away from each other

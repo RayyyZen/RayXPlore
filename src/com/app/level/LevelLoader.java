@@ -15,6 +15,7 @@ import com.app.entity.enemy.*;
 import com.app.level.wincondition.CoinCondition;
 import com.app.level.wincondition.EnemyCondition;
 import com.app.level.wincondition.ItemCondition;
+import com.app.level.wincondition.WinCondition;
 import com.app.usable.item.consumable.Coin;
 import com.app.usable.item.consumable.Heart;
 import com.app.usable.item.equipable.End;

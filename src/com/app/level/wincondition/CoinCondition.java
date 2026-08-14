@@ -1,18 +1,34 @@
 package com.app.level.wincondition;
 
 import com.app.level.Level;
-import com.app.level.WinCondition;
 
-public class CoinCondition implements WinCondition {
+/**
+ * The coin condition class
+ * @version 5.0 (Fifth world)
+ * @since 5.0 (Fifth world)
+ * @author Rayane
+ */
+public class CoinCondition extends Win implements WinCondition {
 
-    private static final String LABEL = "Collect all the coins to finish the level 📀 !";
+    /**
+     * The description of the coin win condition
+     */
+    private static final String DESCRIPTION = "Collect all the coins to finish the level 📀 !";
+
+    /**
+     * The coin win condition constructor
+     */
+    public CoinCondition(){
+        super(DESCRIPTION);
+    }
     
+    /**
+     * Checks if the player achieved the win condition of a level
+     * @param level The level that will be checked
+     * @return True if the player achieved the win condition of the level, or false otherwise
+     */
     public boolean win(Level level){
         return level.getNumberOfCoins() == 0;
-    }
-
-    public String label(){
-        return LABEL;
     }
 
 }

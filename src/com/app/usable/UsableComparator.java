@@ -5,8 +5,23 @@ import java.util.Comparator;
 import com.app.usable.item.Item;
 import com.app.usable.skill.Skill;
 
+/**
+ * The usable comparator class that sorts usables
+ * @version 5.0 (Fifth world)
+ * @since 5.0 (Fifth world)
+ * @author Rayane
+ */
 public class UsableComparator implements Comparator<Usable> {
 
+    /**
+     * The usable comparator constructor
+     */
+    public UsableComparator(){}
+
+    /**
+     * Compares 2 usables
+     * @return -1 if the first usable comes before the second one, 0 if they are the same, 1 if the first usable comes after the second one
+     */
     @Override
     public int compare(Usable usable1, Usable usable2) {
 

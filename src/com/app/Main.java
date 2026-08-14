@@ -1,7 +1,6 @@
 package com.app;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -11,11 +10,16 @@ import com.app.level.Level;
 
 /**
  * The main class
- * @version 4.0 (Fourth world)
+ * @version 5.0 (Fifth world)
  * @since 1.0 (First world)
  * @author Rayane
  */
 public class Main {
+
+    /**
+     * The main constructor
+     */
+    public Main(){}
     
     /**
      * The main method
@@ -46,7 +50,7 @@ public class Main {
 
             int index = -1;
 
-            List<String> names = null;
+            List<String> damagedEnemies = null;
             List<String> newSkills = null;
 
             do{
@@ -68,7 +72,7 @@ public class Main {
                     break;
                 }
 
-                View.displayScreen(level,names,newSkills);
+                View.displayScreen(level,damagedEnemies,newSkills);
 
                 System.out.print("-> Choose  : ");
                 input = scanner.nextLine();
@@ -78,24 +82,29 @@ public class Main {
                     break;
                 }
 
+                damagedEnemies = null;
+
                 if(View.validInventoryIndex(player,input)){
                     int inventoryIndex = Integer.parseInt(input) - 1;
-                    names = level.use(inventoryIndex);
+                    damagedEnemies = level.use(inventoryIndex);
                     
-
                 } else {
                     level.movePlayer(View.inputToDirection(input));
                     level.moveAllEnemies();
-                    names = new ArrayList<>();
                 }
 
-                names.addAll(level.effect());
+                if(damagedEnemies != null){
+                    damagedEnemies.addAll(level.effect());
+                
+                } else {
+                    damagedEnemies = level.effect();
+                }
 
                 newSkills = player.unlockNewSkills(level);
 
             }while(!level.gameOver());
 
-            View.displayEndScreen(level,names,newSkills);
+            View.displayEndScreen(level,damagedEnemies,newSkills);
 
             if(!level.gameOver() || input.toLowerCase().equals("l")){
                 //It means the player has finished the levels or he wants to leave
@@ -109,4 +118,5 @@ public class Main {
 
         scanner.close();
     }
+
 }
